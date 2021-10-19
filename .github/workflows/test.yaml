@@ -1,0 +1,33 @@
+name: Test
+on:
+  workflow_dispatch:
+    inputs:
+      gxyimage:
+        description: 'Container image to use with Galaxy-Helm'
+        required: true
+        default: 'galaxy/galaxy-min'
+      gxytag:
+        description: 'Container image tag'
+        required: true
+        default: '21.05'
+      clustername:
+        description: 'Name of Kubernetes cluster'
+        required: true
+        default: 'gxy-on-demand'
+      disksize:
+        description: 'Size of NFS disk in Gi. Must be at least 100.'
+        required: true
+        default: 250
+jobs:
+  deploygalaxy:
+    env:
+      GKE_ZONE: us-east1-b
+      GXY_TMP: /tmp/gxy
+      GKM_VERSION: "1.1.0"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy GalaxyKubeMan
+        continue-on-error: true
+        run: >
+          (( gxysize = ${{ github.event.inputs.disksize }} - 50 ));
+          (time sh -c "echo ${gxysize}Gi")
