@@ -94,7 +94,7 @@ jobs:
               --set nfs.persistence.existingClaim=\"${{ github.event.inputs.clustername }}-nfs-disk-pvc\"\
               --set nfs.persistence.size=\"${{ github.event.inputs.disksize }}Gi\"\
               --set galaxy.postgresql.persistence.existingClaim=\"${{ github.event.inputs.clustername }}-postgres-disk-pvc\"\
-              --set galaxy.persistence.size=\"\${gxysize}Gi\"\
+              --set galaxy.persistence.size=\"${gxysize}Gi\"\
               --set galaxy.postgresql.galaxyDatabasePassword=${{secrets.COMMON_PASSWORD}}\
               --set galaxy.postgresql.master.nodeSelector.\"cloud\.google\.com\/gke-nodepool\"=\"default-pool\"\
               --set galaxy.nodeSelector.\"cloud\.google\.com\/gke-nodepool\"=\"default-pool\"\
