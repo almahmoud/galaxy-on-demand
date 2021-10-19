@@ -13,7 +13,7 @@ on:
       clustername:
         description: 'Name of Kubernetes cluster'
         required: true
-        default: 'galaxy-on-demand-cluster'
+        default: 'gxy-on-demand'
 jobs:
   deploygke:
     env:
