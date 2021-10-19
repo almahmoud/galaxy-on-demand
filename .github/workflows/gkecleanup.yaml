@@ -8,8 +8,6 @@ on:
         default: 'galaxy-on-demand-cluster'
 jobs:
   cleanup:
-    if: always()
-    needs: [deploygke]
     env:
       GKE_ZONE: us-east1-b
     runs-on: ubuntu-latest
