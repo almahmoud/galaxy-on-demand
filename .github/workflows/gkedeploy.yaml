@@ -14,6 +14,10 @@ on:
         description: 'Name of Kubernetes cluster'
         required: true
         default: 'gxy-on-demand'
+      disksize:
+        description: 'Size of NFS disk in Gi. Must be at least 100.'
+        required: true
+        default: 250
 jobs:
   deploygke:
     env:
@@ -32,7 +36,7 @@ jobs:
       - name: Create GKE cluster
         run: gcloud container clusters create "${{ github.event.inputs.clustername }}" --cluster-version="$GKE_VERSION" --disk-size=100 --num-nodes=1 --machine-type=n1-highmem-8 --zone "$GKE_ZONE"
       - name: Create two GCP Disks
-        run: gcloud compute disks create "${{ github.event.inputs.clustername }}-postgres-pd" --size 10Gi --zone "$GKE_ZONE" && gcloud compute disks create "${{ github.event.inputs.clustername }}-nfs-pd" --size 250Gi --zone "$GKE_ZONE"
+        run: gcloud compute disks create "${{ github.event.inputs.clustername }}-postgres-pd" --size 10Gi --zone "$GKE_ZONE" && gcloud compute disks create "${{ github.event.inputs.clustername }}-nfs-pd" --size ${{ github.event.inputs.disksize }}Gi --zone "$GKE_ZONE"
 
   deploygalaxy:
     needs: deploygke
@@ -59,6 +63,7 @@ jobs:
       - name: Deploy GalaxyKubeMan
         continue-on-error: true
         run: >
+          (( gxysize = ${{ github.event.inputs.disksize }} - 50 ));
           (time sh -c "kubectl create ns ${{ github.event.inputs.clustername }}; helm install -n ${{ github.event.inputs.clustername }} ${{ github.event.inputs.clustername }} anvil/galaxykubeman\
               --wait\
               --timeout 2800s\
@@ -82,14 +87,14 @@ jobs:
               --set galaxy.configs.\"galaxy\.yml\".galaxy.admin_users=\"alex@fake.org\"\
               --set persistence.nfs.name=\"${{ github.event.inputs.clustername }}-nfs-disk\"\
               --set persistence.nfs.persistentVolume.extraSpec.gcePersistentDisk.pdName=\"${{ github.event.inputs.clustername }}-nfs-pd\"\
-              --set persistence.nfs.size=\"250Gi\"\
+              --set persistence.nfs.size=\"${{ github.event.inputs.disksize }}Gi\"\
               --set persistence.postgres.name=\"${{ github.event.inputs.clustername }}-postgres-disk\"\
               --set persistence.postgres.persistentVolume.extraSpec.gcePersistentDisk.pdName=\"${{ github.event.inputs.clustername }}-postgres-pd\"\
               --set persistence.postgres.size=\"10Gi\"\
               --set nfs.persistence.existingClaim=\"${{ github.event.inputs.clustername }}-nfs-disk-pvc\"\
-              --set nfs.persistence.size=\"250Gi\"\
+              --set nfs.persistence.size=\"${{ github.event.inputs.disksize }}Gi\"\
               --set galaxy.postgresql.persistence.existingClaim=\"${{ github.event.inputs.clustername }}-postgres-disk-pvc\"\
-              --set galaxy.persistence.size=\"200Gi\"\
+              --set galaxy.persistence.size=\"\${gxysize}Gi\"\
               --set galaxy.postgresql.galaxyDatabasePassword=${{secrets.COMMON_PASSWORD}}\
               --set galaxy.postgresql.master.nodeSelector.\"cloud\.google\.com\/gke-nodepool\"=\"default-pool\"\
               --set galaxy.nodeSelector.\"cloud\.google\.com\/gke-nodepool\"=\"default-pool\"\
